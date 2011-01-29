@@ -18,14 +18,16 @@ int main(int argc, char **argv) {
 	int arg = 1;
 	while (arg < argc) {
 		if (!strcmp(argv[arg], "-p"))
-			if (++arg < argc)
+			if (++arg < argc) {
 				strncpy(prefix, argv[arg], 79);
-			else
+				arg++;
+			} else
 				fuck("no parameter for -p");
 		else if (!strcmp(argv[arg], "-s"))
-			if (++arg < argc)
+			if (++arg < argc) {
 				strncpy(suffix, argv[arg], 79);
-			else
+				arg++;
+			} else
 				fuck("no parameter for -s");
 		else {
 			fuck("usage: prefixer [-p prefix] [-s suffix]");
