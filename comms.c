@@ -1,5 +1,5 @@
 /**
- * \file socket.c
+ * \file comms.c
  * \brief TCP/IP and Unix socket code
  */
 #define _GNU_SOURCE
@@ -9,7 +9,7 @@
 #include <arpa/inet.h>
 #include <sys/un.h>
 #include <netdb.h>
-#include "socket.h"
+#include "comms.h"
 
 int init_connection(char* addr) {
 	struct sockaddr_in inet_addr;

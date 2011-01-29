@@ -4,6 +4,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 fuck(char *s) {
 	printf("%s\n", s);

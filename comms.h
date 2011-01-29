@@ -1,5 +1,5 @@
 /**
- * \file socket.h
+ * \file comms.h
  * \brief TCP/IP and Unix socket code
  */
 #ifndef SOCKET_H

@@ -1,6 +1,10 @@
-ALL="sock"
+ALL=sock mixfifos prefixer toc2lnet
+INSTDIR=bin/
 
 all: ${ALL}
+
+install: all
+	mv ${ALL} ${INSTDIR}
 
 sock: sock.o comms.o
 	gcc -o sock sock.o comms.o

@@ -7,11 +7,13 @@ int main(int argc, char **argv) {
 	for (int i = 1; i < argc; i++) {
 		char buf[1024];
 		int r, sock = init_connection(argv[i]);
-		if (sock == -1)
+		if (sock == -1) {
+			printf("usage: sock [address\n");
 			continue;
+		}
 		switch(fork()) {
 		case 0:
-			while ((r = read(sock, buf, sizeof(buf))) > 0) {
+			while ((r = read(sock, buf, sizeof(buf))) > -1) {
 				buf[r] = '\0';
 				printf("%s", buf);
 				fflush(stdout);
