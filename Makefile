@@ -1,4 +1,4 @@
-ALL=sock mixfifos prefixer toc2lnet
+ALL=sock mixfifos prefixer toc2lnet oscarsock
 INSTDIR=bin/
 
 all: ${ALL}
