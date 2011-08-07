@@ -8,14 +8,13 @@ int main(int argc, char **argv) {
 		char buf[1024];
 		int r, sock = init_connection(argv[i]);
 		if (sock == -1) {
-			printf("usage: sock [address\n");
+			printf("usage: sock [address]\n");
 			continue;
 		}
 		switch(fork()) {
 		case 0:
 			while ((r = read(sock, buf, sizeof(buf))) > -1) {
-				buf[r] = '\0';
-				printf("%s", buf);
+				write(1, buf, r);
 				fflush(stdout);
 			}
 			perror("read");

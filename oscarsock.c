@@ -5,29 +5,18 @@
  *
  * http://eli.neoturbine.net
  */
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <limits.h>
 #include <poll.h>
 #include <stdbool.h>
+#include <limits.h>
+#include "comms.h"
 
-#define AUTH_HOST "login.oscar.aol.com"
-#define AUTH_PORT 5190
-#define CLIENT_ID_STRING "oscarsock.2011"
+#define HOST "login.oscar.aol.com:5190"
+#define CLIENT_ID_STRING "oscarsock v1.0"
 
 unsigned int sequence = UINT_MAX;
-
-struct tlv {
-	unsigned short type;
-	unsigned short length;
-	unsigned char value[0x10000];
-};
 
 struct flap {
 	unsigned char magic;
@@ -40,15 +29,14 @@ void flap_to_socket(int socket, struct flap *header, void *buf, int len) {
 	char *packet = malloc((sizeof(struct flap)+len+1)*sizeof(char));
 	int slen = 0, tmp;
 
-	//header->seq = htons(++sequence & 0xffff);;
-	//header->len = htons(len);
-	//memcpy(packet, header, sizeof(struct flap));
+	header->seq = ++sequence & 0xffff;
+	header->len = len;
 	packet[0] = header->magic;
 	packet[1] = header->frame;
 	packet[2] = (header->seq & 0xff00) >> 8;
 	packet[3] = (header->seq & 0xff);
-	packet[4] = (header->seq & 0xff00) >> 8;
-	packet[5] = (header->seq & 0xff);
+	packet[4] = (header->len & 0xff00) >> 8;
+	packet[5] = (header->len & 0xff);
 	slen += 6;
 	memcpy(&packet[slen], buf, len);
 	slen += len;
@@ -60,7 +48,43 @@ void flap_to_socket(int socket, struct flap *header, void *buf, int len) {
 		}
 		len += tmp;
         }
-	//printf("%u: sent:%d len:%d data:%s\n", sequence, slen, len, buf);
+	fprintf(stderr, "%u: slen:%d len:%d\n", header->seq, slen, header->len);
+	write(1, buf, header->len);
+	free(packet);
+}
+
+int socket_to_flap(int sock, struct flap *header, unsigned char *buf) {
+	int i, rlen = 0;
+
+	while (rlen < 6) {
+		if ((i = read(sock, &buf[rlen], 6 - rlen)) < 1) {
+			perror("read1");
+			return -1;
+		}
+		rlen += i;
+	}
+	header->magic = buf[0];
+	header->frame = buf[1];
+	header->seq = (buf[2] << 8) | buf[3];
+	header->len = (buf[4] << 8) | buf[5];
+
+	if (header->magic != '*') {
+		return -2;
+	}
+	fprintf (stderr, "flap frame %d seq %d len %d\n", header->frame, header->seq, header->len);
+
+	rlen = 0;
+	while (rlen < header->len) {
+		if ((i = read(sock, &buf[rlen], header->len - rlen)) < 1) {
+			perror("read2");
+			return -1;
+		}
+		rlen += i;
+	}
+	write(1, buf, header->len);
+	fflush(stdout);
+
+	return rlen;
 }
 
 void roast(char *password) {
@@ -82,6 +106,14 @@ void make_tlv_str(unsigned char *buf, int type, int length, char *value) {
 
 	for (i = 0; i < length; i++)
 		buf[4+i] = value[i];
+}
+
+void make_tlv_uchar(unsigned char *buf, int type, unsigned char value) {
+	buf[0] = (type & 0xff00) >> 8;
+	buf[1] = (type & 0xff);
+	buf[2] = 0;
+	buf[3] = 1;
+	buf[4] = (value & 0xff);
 }
 
 void make_tlv_ushort(unsigned char *buf, int type, unsigned short value) {
@@ -109,22 +141,18 @@ int oscar_signon(int sock, struct flap *header, char **argv) {
 	char buf[0x10000] = "";
 	int rlen;
 	int len = 0;
+	struct flap recv_header;
 
 	roast(argv[2]);
-
-	if ((rlen = read(sock, buf, sizeof(buf)) < 1)) {
-		perror("read");
-		exit(0);
-	}
 
 	header->magic = '*';
 	header->frame = 1;
 	header->seq = htons(0);
-	
-	buf[len++] = 0;
-	buf[len++] = 0;
-	buf[len++] = 0;
-	buf[len++] = 1;
+
+	if (socket_to_flap(sock, &recv_header, buf) == -1)
+		return -1;
+
+	len = 4;
 	make_tlv_str(&buf[len], 1, strlen(argv[1]), argv[1]);
 	len += 4 + strlen(argv[1]);
 	make_tlv_str(&buf[len], 2, pwlen, argv[2]);
@@ -149,13 +177,16 @@ int oscar_signon(int sock, struct flap *header, char **argv) {
 	len += 6;
 
 	flap_to_socket(sock, header, buf, len);
+
+	header->frame = 2;
+
+	return sock;
 }
+
 
 int main(int argc, char **argv) {
 	int sock;
-	struct hostent *host;
-	struct sockaddr_in sa;
-	char *buf = malloc(4096);
+	char buf[0x10000];
 	int rlen, i;
 	struct flap send_header;
 	struct flap recv_header;
@@ -167,32 +198,15 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-		perror("socket");
+	if ((sock = init_connection(HOST)) == -1) {
 		return -1;
 	}
 	
-	if (!(host = gethostbyname(AUTH_HOST))) {
-		fprintf(stderr, "unable to resolve host " AUTH_HOST "\n");
-		return -1;
-	}
-
-	sa.sin_family = AF_INET;
-	sa.sin_port = htons(AUTH_PORT);
-	sa.sin_addr = *((struct in_addr *)host->h_addr);
-	memset(&(sa.sin_zero), '\0', 8);
-	
-	if (connect(sock, (struct sockaddr*)&sa, sizeof(struct sockaddr)) == -1) {
-		perror("connect");
-		return -1;
-	}
-
-//	toc_signon(sock, &send_header, argv);
-	if (oscar_signon(sock, &send_header, argv) == -1)
+	if ((sock = oscar_signon(sock, &send_header, argv)) == -1)
 	{
 		fprintf(stderr, "signon failure");
 		return -1;
-	}
+	} 
 
 	pfds[0].fd = 0;
 	pfds[0].events = POLLIN;
@@ -203,44 +217,20 @@ int main(int argc, char **argv) {
 		flag = true;
 		if (pfds[0].revents & POLLIN) {
 			flag = false;
-			buf = malloc(4097);
-			if (fgets(buf, 4096, stdin) == NULL) {
+			if (fgets(buf, 0xffff, stdin) == NULL) {
 				perror("exiting");
 				return 1;
 			}
 			buf[strcspn(buf, "\n")] = '\0';
 			//fprintf(stderr, "%s\n", buf);
 			flap_to_socket(sock, &send_header, buf, strlen(buf) + 1);
-			free(buf);
 		}
 		if (pfds[1].revents & POLLIN) {
 			flag = false;
-			buf = malloc(7);
-			rlen = 0;
-			while (rlen < 6) {
-				if ((i = read(sock, buf + rlen, 6 - rlen)) < 1) {
-					perror("read1");
-					return 0;
-				}
-				rlen += i;
-			}
-			memcpy(&recv_header, buf, 6);
-			free(buf);
-			rlen = 0;
-			//printf("*%d:", ntohs(recv_header.len));
-			buf = malloc(ntohs(recv_header.len)+1);
-			while (rlen < ntohs(recv_header.len)) {
-				if ((i = read(sock, buf + rlen, ntohs(recv_header.len) - rlen)) < 1) {
-					perror("read2");
-					return 0;
-				}
-				rlen += i;
-			}
-			buf[rlen] = '\0';
-			printf("%s\n", buf);
-			//fprintf(stderr, "%s\n", buf);
-			fflush(stdout);
-			free(buf);
+
+			if (socket_to_flap(sock, &recv_header, buf) == -1)
+				return 1;
+
 		}
 		if (flag == true) {
 			fprintf(stderr, "no read from poll");

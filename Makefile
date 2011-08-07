@@ -6,6 +6,8 @@ all: ${ALL}
 install: all
 	mv ${ALL} ${INSTDIR}
 
+oscarsock: oscarsock.o comms.o
+
 sock: sock.o comms.o
 	gcc -o sock sock.o comms.o
 
