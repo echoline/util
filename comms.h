@@ -4,6 +4,12 @@
  */
 #ifndef SOCKET_H
 #define SOCKET_H
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <arpa/inet.h>
+#include <sys/un.h>
+#include <netdb.h>
 
 /**
  * initialize and return a unix or internet socket

@@ -3,12 +3,6 @@
  * \brief TCP/IP and Unix socket code
  */
 #define _GNU_SOURCE
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <arpa/inet.h>
-#include <sys/un.h>
-#include <netdb.h>
 #include "comms.h"
 
 int init_connection(char* addr) {
