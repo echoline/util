@@ -1,4 +1,4 @@
-ALL=sock mixfifos prefixer toc2lnet oscarsock stdsrv
+ALL=sock mixfifos prefixer toc2lnet oscarsock stdsrv filesrv
 INSTDIR=bin/
 
 all: ${ALL}
@@ -13,6 +13,9 @@ sock: sock.o comms.o
 
 sock.o: sock.c
 	gcc -c sock.c --std=c99
+
+filesrv: filesrv.o comms.o
+	gcc -o filesrv filesrv.o comms.o
 
 stdsrv: stdsrv.o comms.o
 	gcc -o stdsrv stdsrv.o comms.o
