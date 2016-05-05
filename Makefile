@@ -1,4 +1,5 @@
-ALL=sock mixfifos prefixer toc2lnet oscarsock stdsrv filesrv
+ALL=choose
+LDFLAGS=-static
 INSTDIR=bin/
 
 all: ${ALL}
