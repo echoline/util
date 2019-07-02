@@ -48,8 +48,7 @@ int main(int argc, char **argv) {
 
 		if (fds[1].revents & POLLIN) {
 			if (fgets(buf, sizeof(buf), stdin) == NULL) {
-				close (client);
-				return 0;
+				continue;
 			}
 
 			for (client = 2; client < FDS; client++) {
@@ -87,10 +86,10 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		for (r = 0; r < FDS; r++)
+		for (r = 2; r < FDS; r++)
 			if (fds[r].fd != -1 && fds[r].revents & POLLHUP) {
 				close (fds[r].fd);
-				return 0;
+				fds[r].fd = -1;
 			}
 	}
 
