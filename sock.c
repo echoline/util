@@ -13,11 +13,12 @@ int main(int argc, char **argv) {
 		}
 		switch(fork()) {
 		case 0:
-			while ((r = read(sock, buf, sizeof(buf))) > -1) {
+			while ((r = read(sock, buf, sizeof(buf))) > 0) {
 				write(1, buf, r);
 				fflush(stdout);
 			}
 			perror("read");
+			close(sock);
 			return 0;
 		case -1:
 			perror("fork");
@@ -25,7 +26,10 @@ int main(int argc, char **argv) {
 		default:
 			while (fgets(buf, sizeof(buf), stdin)) {
 				r = write(sock, buf, strlen(buf));
-				if (r < 0) perror("write");
+				if (r <= 0) {
+					perror("write");
+					break;
+				}
 			}
 			close(sock);
 		}

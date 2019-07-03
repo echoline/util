@@ -10,7 +10,7 @@ int usage(char **argv) {
 
 int main(int argc, char **argv) {
 	char buf[1024];
-	int r, client, sock;
+	int r, client, sock, i;
 	int FDS = 2;
 	struct pollfd *fds;
 
@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 
 		if (fds[1].revents & POLLIN) {
 			if (fgets(buf, sizeof(buf), stdin) == NULL) {
-				continue;
+				break;
 			}
 
 			for (client = 2; client < FDS; client++) {
@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
 					continue;
 				}
 
-				if (r < 0) {
+				if (r <= 0) {
 					perror("read");
 					close (fds[client].fd);
 					fds[client].fd = -1;
@@ -83,6 +83,15 @@ int main(int argc, char **argv) {
 				}
 				write(1, buf, r);
 				fflush(stdout);
+				for (i = 2; i < FDS; i++) {
+					if (fds[i].fd == -1 || client == i)
+						continue;
+					if (write(fds[i].fd, buf, r) < 0) {
+						perror("write");
+						close(fds[i].fd);
+						fds[i].fd = -1;
+					}
+				}
 			}
 		}
 
@@ -94,7 +103,6 @@ int main(int argc, char **argv) {
 	}
 
 	perror("poll");
-	close(client);
 	return -1;
 }
 
