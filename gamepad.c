@@ -27,7 +27,7 @@ int main() {
 				fflush(stdout);
 			}
 		}
-		usleep(125);
+		usleep(1);
 	}
 }
 
