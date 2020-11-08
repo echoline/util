@@ -127,26 +127,37 @@ flip(Rune in){
 void
 main(int argc, char **argv){
 	Rune rune;
-	char buf[256];
-	Rune out[256];
-	int r, i, j;
+	char buf[8192 + UTFmax];
+	char *ptr;
+	Rune out[8192 + UTFmax];
+	int r, i, j, l;
 
-	while((r = read(0, buf, sizeof buf)) != 0) {
+	while((r = read(0, buf, sizeof buf - UTFmax)) != 0) {
 		if (r < 0)
 			sysfatal("read: %r");
 
-		j = 0;
-		while(r > 0){
-			i = chartorune(&rune, buf);
-			if(i == 1 && rune == Runeerror)
-				sysfatal("invalid utf-8");
-			r -= i;
-			memmove(buf, buf + i, r);
-			rune = flip(rune);
-			out[j++] = rune;
-		}
-		out[j] = L'\0';
+		buf[r] = '\0';
 
-		print("%S", out);
+		ptr = buf;
+		while(r > 0){
+			l = strcspn(ptr, "\r\n");
+			j = utfnlen(ptr, l);
+			out[j--] = L'\0';
+			while(j >= 0){
+				i = chartorune(&rune, ptr);
+				if(i == 1 && rune == Runeerror)
+					sysfatal("invalid utf-8");
+				r -= i;
+				ptr += i;
+				rune = flip(rune);
+				out[j--] = rune;
+			}
+
+			print("%S", out);
+			while(*ptr == '\r' || *ptr == '\n'){
+				print("%c", *ptr++);
+				r--;
+			}
+		}
 	}
 }
