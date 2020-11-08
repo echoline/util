@@ -139,7 +139,7 @@ main(int argc, char **argv){
 		while(r > 0){
 			i = chartorune(&rune, buf);
 			if(i == 1 && rune == Runeerror)
-				sysfatal("chartorune: %r");
+				sysfatal("invalid utf-8");
 			r -= i;
 			memmove(buf, buf + i, r);
 			rune = flip(rune);
