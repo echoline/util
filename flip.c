@@ -108,6 +108,10 @@ Rune runes[][2] = {
 	{L'ㄣ',  L'4'},
 	{L'ϛ',  L'5'},
 	{L'ㄥ',  L'7'},
+	{L'(',  L')'},
+	{L')',  L'('},
+	{L'[',  L']'},
+	{L']',  L'['},
 	{0, 0},
 };
 
@@ -140,6 +144,11 @@ main(int argc, char **argv){
 
 		ptr = buf;
 		while(r > 0){
+			while(*ptr == ' ' || *ptr == '	'){
+				print("%c", *ptr++);
+				r--;
+			}
+
 			l = strcspn(ptr, "\r\n");
 			j = utfnlen(ptr, l);
 			out[j--] = L'\0';
