@@ -122,8 +122,6 @@ flip(Rune in){
 	while(runes[i][0]){
 		if(runes[i][0] == in)
 			return runes[i][1];
-		if(runes[i][1] == in)
-			return runes[i][0];
 		i++;
 	}
 
