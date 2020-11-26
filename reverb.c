@@ -16,7 +16,7 @@ reverb(unsigned char *buf, short *tmp, int len)
 {
 	short l, r;
 	int i;
-	int dur = delay * (rate/1000.0);
+	int dur = delay;
 
 	for(i = 0; i < len; i += 4){
 		l = buf[i+0] | (buf[i+1] << 8);
@@ -53,7 +53,7 @@ doproc(void *unused)
 void
 redraw(Image *screen)
 {
-	int x = delay * 4;
+	int x = delay;
 
 	draw(screen, screen->r, display->white, nil, ZP);
 
@@ -103,7 +103,7 @@ threadmain(int argc, char **argv)
 			if (xy.y > c.y)
 				decay = xy.x / (double)Dx(screen->r);
 			else
-				delay = xy.x / 4;
+				delay = xy.x;
 			
 			redraw(screen);
 		}
