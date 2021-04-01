@@ -22,7 +22,7 @@ int init_connection(char* addr) {
 		}
 		unix_addr.sun_family = AF_UNIX;
 		strcpy(unix_addr.sun_path, address);
-		i = strlen(unix_addr.sun_path) + sizeof(unix_addr.sun_family);
+		i = sizeof(unix_addr);
 		if ((connect(sock, (struct sockaddr *)&unix_addr, i) == -1)) {
 			free(address);
 			perror("connect");
