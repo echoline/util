@@ -18,6 +18,7 @@ filesrv: filesrv.o comms.o
 	gcc -o filesrv filesrv.o comms.o
 
 stdsrv: stdsrv.o comms.o
+	gcc -o stdsrv stdsrv.o comms.o
 
 stdsrv.o: stdsrv.c
 

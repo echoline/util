@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/wait.h>
 
 int main(int argc, char **argv) {
 	for (int i = 1; i < argc; i++) {
@@ -17,9 +18,8 @@ int main(int argc, char **argv) {
 				write(1, buf, r);
 				fflush(stdout);
 			}
-			perror("read");
 			close(sock);
-			return 0;
+			break;
 		case -1:
 			perror("fork");
 			break;
@@ -32,6 +32,7 @@ int main(int argc, char **argv) {
 				}
 			}
 			close(sock);
+			wait(NULL);
 		}
 	}
 }
